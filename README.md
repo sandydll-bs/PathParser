@@ -49,7 +49,7 @@ Lo strumento legge un file di testo contenente un percorso per riga ed esegue un
 # Esempio
 
 1. Esporta percorsi da:
-   - System Informer > csrss > ^(?:\\\\\?\\)?[A-Za-z]:\\.+$
+   - System Informer > csrss > `^(?:\\\\\?\\)?[A-Za-z]:\\.+$`
 
 2. Salva in un .txt
 
