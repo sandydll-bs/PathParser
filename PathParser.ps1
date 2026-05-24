@@ -26,13 +26,11 @@ function ControllaStato {
         return "Not Found"
     }
     try {
-        $sig =
-            Get-AuthenticodeSignature `
-            -FilePath $fileInput `
-            -ErrorAction Stop
+        $sig = Get-AuthenticodeSignature -FilePath $fileInput -ErrorAction Stop
         if ($sig.Status -eq "Valid") {
             return "Signed"
         }
+
         return "Unsigned"
     }
     catch {
@@ -41,12 +39,9 @@ function ControllaStato {
 }
 
 function ElaboraPath {
-    $results =
-        [System.Collections.Generic.List[Object]]::new()
-    $content =
-        Get-Content $inputPath
-    $total =
-        $content.Count
+    $results = [System.Collections.Generic.List[Object]]::new()
+    $content = Get-Content $inputPath
+    $total = $content.Count
     $i = 0
     foreach ($line in $content) {
         $i++
@@ -54,22 +49,28 @@ function ElaboraPath {
             -Activity "Analisi file in corso..." `
             -Status "Elaborazione riga $i di $total" `
             -PercentComplete (($i / $total) * 100)
-        $percorsoCorrente =
-            $line.Trim()
+        $percorsoCorrente = $line.Trim()
         if ([string]::IsNullOrWhiteSpace($percorsoCorrente)) {
             continue
         }
-        $statoFile =
-            ControllaStato `
-            -fileInput $percorsoCorrente
+        if ($percorsoCorrente -ieq "C:\WINDOWS\WindowsShell.Manifest") {
+            continue
+        }
+        $ext = [System.IO.Path]::GetExtension($percorsoCorrente)
+        if ([string]::IsNullOrWhiteSpace($ext)) {
+            continue
+        }
+        $statoFile = ControllaStato -fileInput $percorsoCorrente
         $timestamp = "-"
-        if (Test-Path $percorsoCorrente) {
+        if (Test-Path -LiteralPath $percorsoCorrente) {
             try {
-                $timestamp =
-                    (Get-Item $percorsoCorrente).LastWriteTime.
-                    ToString("yyyy-MM-dd HH:mm:ss")
+                $timestamp = (
+                    Get-Item -LiteralPath $percorsoCorrente -ErrorAction Stop
+                ).LastAccessTime.ToString("yyyy-MM-dd HH:mm:ss")
             }
-            catch {}
+            catch {
+                $timestamp = "-"
+            }
         }
         $results.Add([PSCustomObject]@{
             Percorso  = $percorsoCorrente
@@ -83,12 +84,8 @@ function ElaboraPath {
 $risultati = @(ElaboraPath)
 
 if ($risultati.Count -gt 0) {
-    $risultati |
-    Out-GridView `
-    -Title "Paths Parser - DS: @imsandy.dll"
+    $risultati | Out-GridView -Title "Paths Parser - DS: @imsandy.dll"
 }
 else {
-    Write-Host `
-    "Nessun dato estratto." `
-    -ForegroundColor Yellow
+    Write-Host "Nessun dato estratto." -ForegroundColor Yellow
 }
